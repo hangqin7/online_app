@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="385211e5-e33a-40dc-b428-537aaf149d65" name="ems_onlineapp">
+        <fileTransfer rootFolder="/home/ec2-user/ems_app" accessType="SFTP" host="ec2-13-61-23-129.eu-north-1.compute.amazonaws.com" port="22" sshConfigId="cf77953d-d764-48eb-b794-ee0c24b95117" sshConfig="ec2-user@ec2-13-61-23-129.eu-north-1.compute.amazonaws.com:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
