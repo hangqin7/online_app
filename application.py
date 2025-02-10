@@ -31,12 +31,12 @@ theme_bgcolor = "#1c1c1c"  #1c1c1c
 
 #######################################################################################################
 # Flask Setup
-server = Flask(__name__)
-server.secret_key = 'my_secret_key'
+application = Flask(__name__)
+application.secret_key = 'my_secret_key'
 
 # Flask-Login Setup
 login_manager = LoginManager()
-login_manager.init_app(server)
+login_manager.init_app(application)
 login_manager.login_view = 'login'
 
 # MySQL Database Connection Setup
@@ -76,7 +76,7 @@ class User(UserMixin):
 
 
 # Initialize the Dash app
-app = dash.Dash(__name__, suppress_callback_exceptions=True, server=server, url_base_pathname='/dashboard/')
+app = dash.Dash(__name__, suppress_callback_exceptions=True, server=application, url_base_pathname='/dashboard/')
 # data_dict and logger
 # data_logger = DataLogger()
 # data_logger.clear_old_logs(days=3)
@@ -152,7 +152,7 @@ app.layout = dash_layout()
 
 
 # Home Route (Redirect to login if not logged in)
-@server.route('/')
+@application.route('/')
 def home():
     # if current_user.is_authenticated:
     return redirect('/dashboard/')
@@ -324,5 +324,5 @@ def update_main_page(n):
 # Run the app
 if __name__ == "__main__":
     # app.run_server(debug=True)
-    server.run(debug=False)
+    application.run(debug=True)
 
