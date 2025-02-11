@@ -23,3 +23,6 @@ streaming_interval = 5  # seconds
 default_value = 0
 data_dict = {'voltage':default_value, 'current': default_value, 'soc': default_value, 'temperature': default_value,
                 'power': default_value, 'connected': False}
+
+
+print(PROJECT_ROOT)

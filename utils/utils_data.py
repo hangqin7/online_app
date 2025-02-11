@@ -3,7 +3,7 @@ import mysql.connector
 from mysql.connector import Error, pooling
 import pandas as pd
 from collections import deque
-from utils.config import *
+from config import *
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 import configparser

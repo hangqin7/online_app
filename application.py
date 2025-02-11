@@ -1,29 +1,16 @@
 import dash
 import threading
-from dash import dcc, html, no_update
-from dash.dependencies import Input, Output, State
+from dash import no_update
+from dash.dependencies import Input, Output
 from tabs.main_content import main_content, dash_layout
 from tabs.stack1 import stack1_content, stack1_statics, stack1_dynamics
 from tabs.stack2 import stack2_content
-from utils.utils_data import DataLogger, synthetic_data_poll
-from utils.utils_api import build_datapack
-from utils.utils_visualization import get_trace_obj, get_figure_layout
-from datetime import datetime
-from dash.exceptions import PreventUpdate
-from flask import Flask, render_template, redirect, url_for, request, session
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask import Flask, render_template, redirect, url_for, request
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 # import pymysql
-from mysql.connector import Error, pooling
-from pymodbus.client import ModbusTcpClient
-import time
+from mysql.connector import pooling
 import configparser
-# from config import *
-
-import pandas as pd
-import random
-import plotly.graph_objs as go
-
-
+from config import *
 
 header_width = 120
 theme_color = "#000000"  # #2d4425
@@ -47,23 +34,24 @@ login_manager.login_view = 'login'
 #         password='e_tothe_m_tothe_s_is_ems2025!',
 #         database='user_manager'
 #     )
-# def get_db_connection():
-#     config_file = os.path.join(PROJECT_ROOT, "utils/user_config.ini")
-#     config = configparser.ConfigParser()
-#     config.read(config_file)
-#     db_config = {
-#         "host": config["mysql"]["host"],
-#         "user": config["mysql"]["user"],
-#         "password": config["mysql"]["password"],
-#         "database": config["mysql"]["database"],
-#     }
-#     connection_pool = pooling.MySQLConnectionPool(
-#         pool_name="datalogger_pool",
-#         pool_size=5,
-#         pool_reset_session=True,
-#         **db_config
-#     )
-#     return connection_pool.get_connection()
+def get_db_connection():
+    config_file = os.path.join(PROJECT_ROOT, "utils/user_config.ini")
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    db_config = {
+        "host": config["mysql"]["host"],
+        "user": config["mysql"]["user"],
+        "password": config["mysql"]["password"],
+        "database": config["mysql"]["database"],
+    }
+    print(db_config)
+    connection_pool = pooling.MySQLConnectionPool(
+        pool_name="datalogger_pool",
+        pool_size=5,
+        pool_reset_session=True,
+        **db_config
+    )
+    return connection_pool.get_connection()
 
 
 
@@ -85,70 +73,70 @@ connection_state = False
 
 
 # Protect the dashboard route with login_required decorator
-# @app.server.before_request
-# def before_request():
-#     """Redirect to login page if not authenticated"""
-#     if not current_user.is_authenticated and request.endpoint != 'login' and request.endpoint != 'register':
-#         return redirect(url_for('login'))
+@app.server.before_request
+def before_request():
+    """Redirect to login page if not authenticated"""
+    if not current_user.is_authenticated and request.endpoint != 'login' and request.endpoint != 'register':
+        return redirect(url_for('login'))
 
 # App layout
 app.layout = dash_layout()
 
 ######################################################################
 # Route
-# @login_manager.user_loader
-# def load_user(user_id):
-#     connection = get_db_connection()
-#     cursor = connection.cursor()
-#     cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-#     user = cursor.fetchone()
-#     connection.close()
-#     if user:
-#         return User(user[0])
-#     return None
-#
-# @server.route('/register', methods=['GET', 'POST'])
-# def register():
-#     if request.method == 'POST':
-#         username = request.form['username']
-#         password = request.form['password']
-#         connection = get_db_connection()
-#         cursor = connection.cursor()
-#         cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-#         existing_user = cursor.fetchone()
-#
-#         if existing_user:
-#             connection.close()
-#             return "User already exists. Please login.", 400
-#
-#         cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
-#         connection.commit()
-#         connection.close()
-#
-#         return redirect(url_for('login'))
-#
-#     return render_template('register.html')
-#
-# # Login Route
-# @server.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         username = request.form['username']
-#         password = request.form['password']
-#         connection = get_db_connection()
-#         cursor = connection.cursor()
-#         cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
-#         user = cursor.fetchone()
-#         connection.close()
-#
-#         if user:
-#             user_obj = User(user[0])  # Assuming the 'id' is the first column
-#             login_user(user_obj)
-#             return redirect('/dashboard/')
-#         else:
-#             return "Invalid credentials", 401
-#
-#     return render_template('login.html')
+@login_manager.user_loader
+def load_user(user_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    connection.close()
+    if user:
+        return User(user[0])
+    return None
+
+@application.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            connection.close()
+            return "User already exists. Please login.", 400
+
+        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
+        connection.commit()
+        connection.close()
+
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+# Login Route
+@application.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
+        user = cursor.fetchone()
+        connection.close()
+
+        if user:
+            user_obj = User(user[0])  # Assuming the 'id' is the first column
+            login_user(user_obj)
+            return redirect('/dashboard/')
+        else:
+            return "Invalid credentials", 401
+
+    return render_template('login.html')
 
 
 # Home Route (Redirect to login if not logged in)

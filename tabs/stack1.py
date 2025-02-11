@@ -1,7 +1,7 @@
 # stack1_content.py
 from dash import dcc, html, dash_table
 import plotly.graph_objs as go
-from utils.config import streaming_interval
+from config import streaming_interval
 
 
 theme_color = "#0c2a0c"

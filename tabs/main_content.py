@@ -1,7 +1,7 @@
 # main_content.py
 from dash import dcc, html
 import dash_daq as daq
-from utils.config import *
+from config import *
 
 
 header_width = 120
