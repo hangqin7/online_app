@@ -1,3 +1,5 @@
+import time
+from datetime import datetime, timedelta
 import dash
 import threading
 from dash import no_update
@@ -7,6 +9,8 @@ from tabs.stack1 import stack1_content, stack1_statics, stack1_dynamics
 from tabs.stack2 import stack2_content
 from flask import Flask, render_template, redirect, url_for, request
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
+from utils.utils_data import DataReader
+from utils.utils_visualization import get_trace_obj, get_figure_layout
 # import pymysql
 from mysql.connector import pooling
 import configparser
@@ -26,14 +30,6 @@ login_manager = LoginManager()
 login_manager.init_app(application)
 login_manager.login_view = 'login'
 
-# MySQL Database Connection Setup
-# def get_db_connection():
-#     return pymysql.connect(
-#         host='localhost',
-#         user='ems_user',
-#         password='e_tothe_m_tothe_s_is_ems2025!',
-#         database='user_manager'
-#     )
 def get_db_connection():
     config_file = os.path.join(PROJECT_ROOT, "utils/user_config.ini")
     config = configparser.ConfigParser()
@@ -44,7 +40,6 @@ def get_db_connection():
         "password": config["mysql"]["password"],
         "database": config["mysql"]["database"],
     }
-    print(db_config)
     connection_pool = pooling.MySQLConnectionPool(
         pool_name="datalogger_pool",
         pool_size=5,
@@ -52,8 +47,6 @@ def get_db_connection():
         **db_config
     )
     return connection_pool.get_connection()
-
-
 
 
 # User class for Flask-Login
@@ -66,10 +59,24 @@ class User(UserMixin):
 # Initialize the Dash app
 app = dash.Dash(__name__, suppress_callback_exceptions=True, server=application, url_base_pathname='/dashboard/')
 # data_dict and logger
-# data_logger = DataLogger()
-# data_logger.clear_old_logs(days=3)
-data_lock = threading.Lock()
+data_reader = DataReader()
+data_reader.read_data_to_buffer()
+data_dict = data_reader.data_buffer
+data_reader.clear_old_logs(days=3)
 connection_state = False
+
+
+def read_from_db():
+    global data_dict
+    while True:
+        data_reader.read_data_to_buffer()
+        data_dict = data_reader.data_buffer
+        time.sleep(streaming_interval)
+
+
+def start_reading():
+    read_thread = threading.Thread(target=read_from_db, daemon=True)
+    read_thread.start()
 
 
 # Protect the dashboard route with login_required decorator
@@ -201,75 +208,72 @@ def update_main_page(n):
 
 
 # Callback to update the real-time curves
-# @app.callback(
-#     [Output("voltage-curve", "figure"),
-#      Output("current-curve", "figure"),
-#      Output("power-curve", "figure"),
-#      Output("soc-curve", "figure"),
-#      Output("temp-curve", "figure"),
-#
-#      Output("dynamic-indicators-table", "data")],
-#      # Output("dynamic-indicators-table-body", "children")],
-#
-#      Output("connection-status", "children"),
-#      Output("connection-status", "style"),
-#
-#      Input("interval-component", "n_intervals")
-# )
-# def update_real_time_data(n):  # the data will update according to the updated_frequency set in the stack1.py
-#     # Generate new random data
-#     # data_dict = synthetic_data_poll()
-#     # data_dict = modbus_poll()
-#     # Generate updated rows
-#     # table_rows = [
-#     #     html.Tr([html.Td(row["indicator"]), html.Td(row["value"])]) for row in table_data
-#     # ]
-#     # Return the updated figures and table data
-#     if connection_state:
-#         real_time_data_series = data_logger.get_realtime_data()
-#         real_time_data_point = real_time_data_series.tail(1)
-#
-#         # voltage, current, power, soc = real_time_data_point['voltage'].values(), real_time_data_point['current'].values(), real_time_data_point['power'].values(), real_time_data_point['soc'].values()
-#         # print(voltage, current, power, soc)
-#
-#         # Create the data for the voltage curve
-#         voltage_trace = get_trace_obj('voltage_v', real_time_data_series)
-#         current_trace = get_trace_obj('current_a', real_time_data_series)
-#         power_trace = get_trace_obj('pack_power_kw', real_time_data_series)
-#         soc_trace = get_trace_obj('soc_percent', real_time_data_series)
-#         temp_trace = get_trace_obj('stack_temp_max', real_time_data_series)
-#
-#         # Update the table data with new values
-#         table_data = [
-#             {"indicator": "pack SOC", "value": f"{real_time_data_point['soc_percent'].values[-1]:.2f}%"},
-#             {"indicator": "pack voltage (V)", "value": f"{real_time_data_point['voltage_v'].values[-1]:.2f}"},
-#             {"indicator": "pack current (A)", "value": f"{real_time_data_point['current_a'].values[-1]:.2f}"},
-#             {"indicator": "pack power (kw)", "value": f"{real_time_data_point['pack_power_kw'].values[-1]:.2f}"},
-#             {"indicator": "max stack temperature (°C)", "value": f"{real_time_data_point['stack_temp_max'].values[-1]:.2f}"},
-#             {"indicator": "State of the Battery Bank", "value": "Healthy"},
-#         ]
-#         return (
-#             {"data": [voltage_trace], "layout": get_figure_layout('pack voltage')},
-#             {"data": [current_trace], "layout": get_figure_layout('pack current')},
-#             {"data": [power_trace], "layout": get_figure_layout('pack power')},
-#             {"data": [soc_trace], "layout": get_figure_layout('pack SOC')},
-#             {"data": [temp_trace], "layout": get_figure_layout('Max stack temperature')},
-#             table_data,
-#             "Yes",
-#             {"color": "green", "fontWeight": "bold"}
-#         )
-#
-#     else:
-#         return (
-#             no_update,
-#             no_update,
-#             no_update,
-#             no_update,
-#             no_update,
-#             no_update,
-#             "No",
-#             {"color": "red", "fontWeight": "bold"}
-#         )
+@app.callback(
+    [Output("voltage-curve", "figure"),
+     Output("current-curve", "figure"),
+     Output("power-curve", "figure"),
+     Output("soc-curve", "figure"),
+     Output("temp-curve", "figure"),
+
+     Output("dynamic-indicators-table", "data")],
+     # Output("dynamic-indicators-table-body", "children")],
+
+     Output("connection-status", "children"),
+     Output("connection-status", "style"),
+
+     Input("interval-component", "n_intervals")
+)
+def update_real_time_data(n):  # the data will update according to the updated_frequency set in the stack1.py
+    # if connection_state:
+    latest_data_point = data_dict[-1]
+    # voltage, current, power, soc = real_time_data_point['voltage'].values(), real_time_data_point['current'].values(), real_time_data_point['power'].values(), real_time_data_point['soc'].values()
+    # print(voltage, current, power, soc)
+
+    # Create the data for the voltage curve
+    voltage_trace = get_trace_obj('voltage_v', data_dict)
+    current_trace = get_trace_obj('current_a', data_dict)
+    power_trace = get_trace_obj('pack_power_kw', data_dict)
+    soc_trace = get_trace_obj('soc_percent', data_dict)
+    temp_trace = get_trace_obj('stack_temp_max', data_dict)
+
+
+    last_update_time = datetime.fromisoformat(str(latest_data_point['timestamp']))
+    time_bound = datetime.now() - timedelta(minutes=10)
+    print(last_update_time)
+    print(time_bound)
+    time_color = "red" if last_update_time < time_bound else "green"
+
+    # Update the table data with new values
+    table_data = [
+        {"indicator": "pack SOC", "value": f"{latest_data_point['soc_percent']}%"},
+        {"indicator": "pack voltage (V)", "value": f"{latest_data_point['voltage_v']}"},
+        {"indicator": "pack current (A)", "value": f"{latest_data_point['current_a']}"},
+        {"indicator": "pack power (kw)", "value": f"{latest_data_point['pack_power_kw']}"},
+        {"indicator": "max stack temperature (°C)", "value": f"{latest_data_point['stack_temp_max']}"},
+        {"indicator": "State of the Battery Bank", "value": "Healthy"},
+    ]
+    return (
+        {"data": [voltage_trace], "layout": get_figure_layout('pack voltage')},
+        {"data": [current_trace], "layout": get_figure_layout('pack current')},
+        {"data": [power_trace], "layout": get_figure_layout('pack power')},
+        {"data": [soc_trace], "layout": get_figure_layout('pack SOC')},
+        {"data": [temp_trace], "layout": get_figure_layout('Max stack temperature')},
+        table_data,
+        str(last_update_time).replace('T', '\t'),
+        {"color": time_color, "fontWeight": "bold"}
+    )
+
+    # else:
+    #     return (
+    #         no_update,
+    #         no_update,
+    #         no_update,
+    #         no_update,
+    #         no_update,
+    #         no_update,
+    #         "No",
+    #         {"color": "red", "fontWeight": "bold"}
+    #     )
 
 
 
@@ -311,6 +315,6 @@ def update_main_page(n):
 
 # Run the app
 if __name__ == "__main__":
-    # app.run_server(debug=True)
-    application.run(debug=True)
+    start_reading()
+    application.run(debug=True, port=5000)
 

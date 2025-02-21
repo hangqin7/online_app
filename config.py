@@ -17,12 +17,10 @@ INDICATORS = ["timestamp", 'voltage_v', 'stack_cell_voltage_avg', 'stack_voltage
               'available_charge_ah', 'energy_exported_kwh', 'energy_imported_kwh', 'dod_ah', 'pack_power_kw',
               'ac_power_kw', 'dc_power_kw', 'storage_power_kw', 'soc_percent', 'soe_percent', 'soh_percent']
 
-BUFFER_duration = 10  # minute
+BUFFER_length = 30  # rows
 poll_interval = 2  # seconds
 streaming_interval = 5  # seconds
 default_value = 0
-data_dict = {'voltage':default_value, 'current': default_value, 'soc': default_value, 'temperature': default_value,
-                'power': default_value, 'connected': False}
 
 
-print(PROJECT_ROOT)
+

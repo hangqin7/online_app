@@ -4,11 +4,11 @@ import pandas as pd
 plot_bg_color = "#212529"  # #212529  1d2720
 plot_line_color = "#8bfe97"
 plot_axis_color = "#1DB954"
-def get_trace_obj(indicator, real_time_frame):
+def get_trace_obj(indicator, data_dict_):
     """turn real time data frame (pd frame) in to graph object according to the key input
         :arg indicator: string"""
 
-    y_list = real_time_frame[indicator].tolist()
+    y_list = [dict_t[indicator] for dict_t in data_dict_]
     trace = go.Scatter(
         x=list(range(len(y_list))),
         y=y_list,

@@ -6,3 +6,5 @@
 *.pyc
 .tabs/__pycache__/
 .templates/__pycache__/
+/emsenv/
+.__pycache__

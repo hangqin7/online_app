@@ -36,7 +36,7 @@ def dash_layout():
                                 "marginLeft": "15px",
                             },
                         ),
-                        html.H1("Ertzy EMS Dashboard",
+                        html.H1("Online ERTZY EMS Dashboard",
                                 style={"margin": "0", "color": "#ffffff", "flex":"1", "textAlign": "center"},
                                 ),
                         html.Button("Logout", id="logout-btn",
@@ -163,16 +163,22 @@ def main_content():
             html.Div(
                 [
                     html.Label(
-                        "Select Energy Strategy:",
+                        "Select Energy Policy:",
                         style={"color": "white", "fontSize": "20px", "fontWeight": "bold", "marginBottom": "20px"},
                     ),
                     dcc.RadioItems(
                         id="energy-strategy",
                         options=[
-                            {"label": "Strategy 1", "value": "strategy1"},
-                            {"label": "Strategy 2", "value": "strategy2"},
-                            {"label": "Strategy 3", "value": "strategy3"},
-                            {"label": "Smart", "value": "strategy4"},
+                            {"label": " Offline", "value": "offline"},
+                            {"label": " Manual", "value": "manual"},
+                            {"label": " Fast Frequency Response", "value": "ffr"},
+                            {"label": " Load Following", "value": "lf"},
+                            {"label": " Dispatch", "value": "dispatch"},
+                            {"label": " Dispatch Capacity", "value": "dc"},
+                            {"label": " Capacity", "value": "capacity"},
+                            {"label": " Test Pattern", "value": "tp"},
+                            {"label": " Combined Scheduled", "value": "cs"},
+                            {"label": " ERTZY Smart Policy", "value": "smart"},
                         ],
                         value="strategy4",
                         labelStyle={"display": "block", "margin": "10px 0", "fontSize": "18px", "color": "white"},
