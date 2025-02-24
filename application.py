@@ -252,6 +252,27 @@ def logout(n_clicks):
     return dash.no_update
 
 # Update content based on selected tab: main, stack1, stack2
+
+app.clientside_callback(
+    """
+    function(tab_value) {
+        // Simply return the current value so that dcc.Store remains in sync.
+        return tab_value;
+    }
+    """,
+    Output("tab-store", "data"),
+    Input("tabs", "value")
+)
+
+@app.callback(
+    Output("tabs", "value"),
+    Input("tab-store", "data")
+)
+def sync_tabs(store_data):
+    # Use the stored value if present, otherwise default to "main"
+    return store_data or "main"
+
+
 @app.callback(
     Output("content", "children"),
     Input("tabs", "value"),

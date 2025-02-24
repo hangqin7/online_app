@@ -74,11 +74,12 @@ def dash_layout():
                         #     },
                         # ),
                         # Tabs
+                        dcc.Store(id="tab-store", storage_type="session"),
                         dcc.Tabs(
                             id="tabs",
                             value="main",
                             persistence=True,
-                            persistence_type="local",  # or "local" if you prefer
+                            persistence_type="session",  # or "local" if you prefer
                             children=[
                                 dcc.Tab(
                                     label="Main Page",
