@@ -62,24 +62,12 @@ def dash_layout():
                            "justifyContent": "center",
                            "marginBottom": "20px",},  # Space for the fixed header
                     children=[
-                        # Label above the tabs
-                        # html.Div(
-                        #     "Select a View:",
-                        #     style={
-                        #         "textAlign": "left",
-                        #         "color": "#1DB954",
-                        #         "fontSize": "16px",
-                        #         "fontWeight": "bold",
-                        #         "marginBottom": "10px",
-                        #     },
-                        # ),
-                        # Tabs
                         dcc.Store(id="tab-store", storage_type="session"),
                         dcc.Tabs(
                             id="tabs",
                             value="main",
-                            persistence=True,
-                            persistence_type="session",  # or "local" if you prefer
+                            # persistence=True,
+                            # persistence_type="session",  # or "local" if you prefer
                             children=[
                                 dcc.Tab(
                                     label="Main Page",
@@ -155,6 +143,19 @@ def dash_layout():
                                 "boxShadow": "0 4px 6px rgba(0, 0, 0, 0.5)",
                             },
                         ),
+                        # dcc.Loading(
+                        #     id="loading-content",
+                        #     type="circle",  # Choose "default", "circle", "cube", etc.
+                        #     children=html.Div(
+                        #         id="content",
+                        #         style={
+                        #             "backgroundColor": "#1c1c1c",
+                        #             "padding": "20px",
+                        #             "borderRadius": "10px",
+                        #             "boxShadow": "0 4px 6px rgba(0, 0, 0, 0.5)",
+                        #         },
+                        #     ),
+                        # ),
                     ],
                 ),
             ],
