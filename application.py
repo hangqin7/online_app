@@ -76,7 +76,7 @@ def read_from_db():
     while True:
         data_reader.read_data_to_buffer()
         data_dict = data_reader.data_buffer
-        print(data_dict[-1])
+        # print(data_dict[-1])
         time.sleep(streaming_interval)
 
 
@@ -176,6 +176,8 @@ def on_message(ws, message):
             message_from_server = {'msg': data.get("message"), 'status': 'ERROR'}
         elif data.get("status") == "OK":
             message_from_server = {'msg': data.get("message"), 'status': 'SUCCESS'}
+        elif data.get("message") == "Internal server error":
+            message_from_server = {'msg': "API server error, cannot connect to local app", 'status': 'SERVER ERROR'}
     except Exception as e:
         print("Error parsing message:", e)
 
@@ -332,7 +334,7 @@ def update_policy(n_clicks, selected_policy, current_policy):
     [Input("interval-main", "n_intervals"),
      Input("policy-store", "data")]
 )
-def sync_policy_display(n, store_data):
+def sync_policy_display(n_policy, store_data):
     # print("finding energy policy")
     return data_dict[-1]['running_policy'], data_dict[-1]['running_policy']
 
@@ -375,7 +377,7 @@ def display_stack1_indicators(indicator_type):
     Output("battery-level-1", "value"),
     Input("interval-main", "n_intervals"),
 )
-def update_main_page(n):
+def update_main_page(n_main):
     soc_unit1 = data_dict[-1]['soc_percent']
     return soc_unit1
 
