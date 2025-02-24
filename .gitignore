@@ -8,3 +8,5 @@
 .templates/__pycache__/
 /emsenv/
 .__pycache__
+/utils/db_config.ini
+/utils/user_config.ini

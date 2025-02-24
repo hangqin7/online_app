@@ -1,6 +1,8 @@
 # main_content.py
+import dash
 from dash import dcc, html
 import dash_daq as daq
+import dash_bootstrap_components as dbc
 from config import *
 
 
@@ -159,39 +161,150 @@ def main_content():
     return html.Div(
         [
             # html.H2("Main Page", style={"color": "#1DB954", "textAlign": "center"}),
+            dcc.Interval(id="interval-error-check", interval=2000, n_intervals=0),
 
+            dcc.Store(id="policy-store", data=running_policy),
+            dcc.Interval(
+                id="interval-main",
+                interval=streaming_interval * 1000,  # Update every 1 second (1000 milliseconds)
+                n_intervals=0,
+            ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader("Notification"),
+                    dbc.ModalBody(id="error-modal-content"),
+                    dbc.ModalFooter(
+                        dbc.Button("Close", id="close-error-modal", n_clicks=0)
+                    ),
+                ],
+                id="error-modal",
+                is_open=False,
+                centered=True,
+            ),
+            # html.Div(
+            #     [
+            #         html.Label(
+            #             "Select Energy Policy:",
+            #             style={"color": "white", "fontSize": "20px", "fontWeight": "bold", "marginBottom": "20px"},
+            #         ),
+            #         dcc.RadioItems(
+            #             id="energy-policy",
+            #             options=[
+            #                 {"label": " Offline", "value": "offline"},
+            #                 {"label": " Manual", "value": "manual"},
+            #                 {"label": " Fast Frequency Response", "value": "ffr"},
+            #                 {"label": " Load Following", "value": "lf"},
+            #                 {"label": " Dispatch", "value": "dispatch"},
+            #                 {"label": " Dispatch Capacity", "value": "dc"},
+            #                 {"label": " Capacity", "value": "capacity"},
+            #                 {"label": " Test Pattern", "value": "tp"},
+            #                 {"label": " Combined Scheduled", "value": "cs"},
+            #                 {"label": " ERTZY Smart Policy", "value": "smart"},
+            #             ],
+            #             value='manual',
+            #             labelStyle={"display": "block", "margin": "10px 0", "fontSize": "18px", "color": "white"},
+            #             style={
+            #                 "marginTop": "20px",
+            #                 "padding": "10px",
+            #                 "backgroundColor": "#1e1e1e",
+            #                 "border": "1px solid #333",
+            #                 "borderRadius": "8px",
+            #             },
+            #         ),
+            #         html.Div(id="status-output", style={"display": "none"}),
+            #     ],
+            #     style={"margin": "20px 0"},
+            # ),
             html.Div(
                 [
                     html.Label(
-                        "Select Energy Policy:",
-                        style={"color": "white", "fontSize": "20px", "fontWeight": "bold", "marginBottom": "20px"},
+                        "Current Energy Strategy:",
+                        style={
+                            "color": "white",
+                            "fontSize": "20px",
+                            "fontWeight": "bold",
+                            "marginBottom": "10px",
+                        },
                     ),
                     dcc.RadioItems(
-                        id="energy-strategy",
-                        options=[
-                            {"label": " Offline", "value": "offline"},
-                            {"label": " Manual", "value": "manual"},
-                            {"label": " Fast Frequency Response", "value": "ffr"},
-                            {"label": " Load Following", "value": "lf"},
-                            {"label": " Dispatch", "value": "dispatch"},
-                            {"label": " Dispatch Capacity", "value": "dc"},
-                            {"label": " Capacity", "value": "capacity"},
-                            {"label": " Test Pattern", "value": "tp"},
-                            {"label": " Combined Scheduled", "value": "cs"},
-                            {"label": " ERTZY Smart Policy", "value": "smart"},
-                        ],
-                        value="strategy4",
-                        labelStyle={"display": "block", "margin": "10px 0", "fontSize": "18px", "color": "white"},
+                        id="energy-policy-display",
+                        options=energy_options,
+                        # value=running_policy,
+                        labelStyle={
+                            "display": "inline-block",
+                            "width": "50%",
+                            "verticalAlign": "top",
+                            "marginBottom": "10px",
+                            "fontSize": "18px",
+                            "color": "white",
+                        },
                         style={
                             "marginTop": "20px",
                             "padding": "10px",
                             "backgroundColor": "#1e1e1e",
                             "border": "1px solid #333",
                             "borderRadius": "8px",
+                            "pointerEvents": "none",  # disables clicking
+                            "opacity": "0.8",  # appears disabled
+                            "textAlign": "left",
                         },
+                    ),
+                    dbc.Button(
+                        "Switch Energy Policy",
+                        id="open-policy-modal",
+                        color="primary",
+                        n_clicks=0,
+                        style={"marginTop": "20px"},
                     ),
                 ],
                 style={"margin": "20px 0"},
+            ),
+            # Modal for selecting a new policy
+            dbc.Modal(
+                [
+                    dbc.ModalHeader("Select New Energy Strategy"),
+                    dbc.ModalBody(
+                        dcc.RadioItems(
+                            id="energy-policy-selection",
+                            options=energy_options,
+                            # value=running_policy,
+                            labelStyle={
+                                "display": "inline-block",
+                                "width": "80%",
+                                "verticalAlign": "top",
+                                "marginBottom": "10px",
+                                "fontSize": "18px",
+                                "color": "black",
+                            },
+                            style={
+                                "marginTop": "20px",
+                                "padding": "10px",
+                                "backgroundColor": "#f0f0f0",
+                                "border": "1px solid #ccc",
+                                "borderRadius": "8px",
+                                "textAlign": "left",
+                            },
+                        )
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button("Cancel", id="cancel-policy", color="secondary", n_clicks=0),
+                            dbc.Button("Confirm", id="confirm-policy", color="primary", n_clicks=0),
+                        ]
+                    ),
+                ],
+                id="policy-modal",
+                is_open=False,
+                centered=True,
+            ),
+            dbc.Toast(
+                id="policy-toast",
+                header="Notification",
+                icon="info",
+                duration=3000,  # Auto-dismiss after 2000ms (2 seconds)
+                is_open=False,
+                style={"position": "fixed", "top": "30%", "left": "40%", "fontSize":"18px",
+                       "width": "350px", "zIndex": "10000", "backgroundColor": "black", "color": "green"},
             ),
 
             html.Div(
@@ -288,11 +401,11 @@ def main_content():
                 },
             ),
             # Interval component to update data
-            dcc.Interval(
-                id="interval-main",
-                interval=streaming_interval * 1000,  # Update every 1 second (1000 milliseconds)
-                n_intervals=0,
-            ),
+            # dcc.Interval(
+            #     id="interval-main",
+            #     interval=streaming_interval * 1000,  # Update every 1 second (1000 milliseconds)
+            #     n_intervals=0,
+            # ),
         ],
         style={"padding": "20px", "backgroundColor": "#121212"},
     )

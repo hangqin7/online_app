@@ -21,6 +21,22 @@ BUFFER_length = 30  # rows
 poll_interval = 2  # seconds
 streaming_interval = 5  # seconds
 default_value = 0
+energy_options = [
+    {"label": " Offline", "value": "offline"},
+    {"label": " Manual", "value": "manual"},
+    {"label": " Fast Frequency Response", "value": "ffr"},
+    {"label": " Load Following", "value": "lf"},
+    {"label": " Dispatch", "value": "dispatch"},
+    {"label": " Dispatch Capacity", "value": "dc"},
+    {"label": " Capacity", "value": "capacity"},
+    {"label": " Test Pattern", "value": "tp"},
+    {"label": " Combined Scheduled", "value": "cs"},
+    {"label": " ERTZY Smart Policy", "value": "smart"},
+]
+energy_dict = {option["value"]: option["label"] for option in energy_options}
+running_policy = ""
+
+
 
 
 

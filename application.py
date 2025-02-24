@@ -1,9 +1,14 @@
 import time
 from datetime import datetime, timedelta
+import queue
+import dash_bootstrap_components as dbc
 import dash
 import threading
+import websocket
+import json
 from dash import no_update
-from dash.dependencies import Input, Output
+from dash import dcc, no_update, callback_context
+from dash.dependencies import Input, Output, State
 from tabs.main_content import main_content, dash_layout
 from tabs.stack1 import stack1_content, stack1_statics, stack1_dynamics
 from tabs.stack2 import stack2_content
@@ -57,7 +62,7 @@ class User(UserMixin):
 
 
 # Initialize the Dash app
-app = dash.Dash(__name__, suppress_callback_exceptions=True, server=application, url_base_pathname='/dashboard/')
+app = dash.Dash(__name__, suppress_callback_exceptions=True, server=application, url_base_pathname='/dashboard/', external_stylesheets=[dbc.themes.BOOTSTRAP])
 # data_dict and logger
 data_reader = DataReader()
 data_reader.read_data_to_buffer()
@@ -71,6 +76,7 @@ def read_from_db():
     while True:
         data_reader.read_data_to_buffer()
         data_dict = data_reader.data_buffer
+        print(data_dict[-1])
         time.sleep(streaming_interval)
 
 
@@ -154,6 +160,85 @@ def home():
     # return redirect(url_for('login'))
 #######################################################################
 
+# WebSocket API Gateway Endpoint
+WS_ENDPOINT = "wss://s204arctwj.execute-api.eu-north-1.amazonaws.com/production/?type=online"
+
+# Global variable to store the websocket connection
+ws_client = None
+message_from_server = None
+
+def on_message(ws, message):
+    global message_from_server
+    print("[Online App] Received from server:", message)
+    try:
+        data = json.loads(message)
+        if data.get("status") == "ERROR":
+            message_from_server = {'msg': data.get("message"), 'status': 'ERROR'}
+        elif data.get("status") == "OK":
+            message_from_server = {'msg': data.get("message"), 'status': 'SUCCESS'}
+    except Exception as e:
+        print("Error parsing message:", e)
+
+def on_open(ws):
+    print("[Online App] Connected to WebSocket API Gateway")
+    # Optionally, you can send an initial command here if needed
+    # command_message = {"clientType": "online", "data": {"command": "lf"}}
+    # ws.send(json.dumps(command_message))
+    # print(f"[Online App] Sent command: {command_message}")
+
+def on_close(ws, close_status_code, close_msg):
+    global ws_client
+    print(f"[Online App] Disconnected (code={close_status_code}, msg={close_msg})")
+    ws_client = None
+
+def on_error(ws, error):
+    print(f"[Online App] WebSocket error: {error}")
+
+def run_ws_client():
+    """
+    This function continuously tries to establish a WebSocket connection.
+    If the connection is lost, it waits for 5 seconds before attempting to reconnect.
+    """
+    global ws_client
+    while True:
+        try:
+            ws = websocket.WebSocketApp(
+                WS_ENDPOINT,
+                on_open=on_open,
+                on_message=on_message,
+                on_close=on_close,
+                on_error=on_error
+            )
+            ws_client = ws  # update the global connection
+            ws.run_forever()  # blocks until the connection is closed or an error occurs
+        except Exception as e:
+            print("[Online App] Exception in WebSocket thread:", e)
+        # Wait a few seconds before attempting to reconnect
+        time.sleep(5)
+
+def send_ws_command(command):
+    """
+    Sends a command (e.g. "lf") to the WebSocket.
+    This function is safe to call from within a Dash callback.
+    """
+    global ws_client
+    if ws_client and ws_client.sock and ws_client.sock.connected:
+        command_message = {
+            "clientType": "online",
+            "data": {
+                "command": command
+            }
+        }
+        try:
+            ws_client.send(json.dumps(command_message))
+            print(f"[Online App] Sent command: {command_message}")
+        except Exception as e:
+            print("[Online App] Failed to send command:", e)
+    else:
+        print("[Online App] WebSocket not connected. Cannot send command.")
+
+
+
 @app.callback(
     Output('url-redirect', 'href'),
     Input('logout-btn', 'n_clicks')
@@ -180,6 +265,100 @@ def render_content(tab):
         return stack2_content()
 
 
+# Dash callback to trigger sending a command to the WebSocket
+# @app.callback(
+#     Output("status-output", "children"),
+#     [Input("energy-policy", "value")]
+# )
+# def update_policy(selected_policy):
+#     # When the radio button changes, send the command to the WebSocket
+#     send_ws_command(selected_policy)
+#     # Return a message (not displayed if the div is hidden)
+#     return f"Sent command: {selected_policy}"
+
+
+@app.callback(
+    Output("policy-modal", "is_open"),
+    [
+        Input("open-policy-modal", "n_clicks"),
+        Input("cancel-policy", "n_clicks"),
+        Input("confirm-policy", "n_clicks"),
+    ],
+    [State("policy-modal", "is_open")],
+)
+def toggle_modal(open_click, cancel_click, confirm_click, is_open):
+    ctx = callback_context
+    if not ctx.triggered:
+        return is_open
+    button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    if button_id in ["open-policy-modal", "cancel-policy", "confirm-policy"]:
+        return not is_open
+    return is_open
+
+# Callback to update the energy policy based on user confirmation
+@app.callback(
+    [Output("policy-store", "data"),
+        # Output("energy-policy-display", "value"),
+     Output("policy-toast", "children"),
+     Output("policy-toast", "is_open")],
+    [Input("confirm-policy", "n_clicks")],
+    [State("energy-policy-selection", "value"),
+     # State("energy-policy-display", "value"),
+     State("policy-store", "data"),]
+)
+def update_policy(n_clicks, selected_policy, current_policy):
+    # global running_policy
+    if not n_clicks:
+        # raise dash.exceptions.PreventUpdate
+        return data_dict[-1]['running_policy'], no_update, no_update
+
+    if selected_policy == data_dict[-1]['running_policy']:
+        message = "No changes applied. Energy policy remains unchanged."
+        return data_dict[-1]['running_policy'], message, True
+        # return message, True
+    else:
+        # running_policy = selected_policy
+        send_ws_command(selected_policy)
+        # time.sleep(5)
+        message = (f"Try to change the energy policy updated to: {energy_dict.get(selected_policy)},"
+                   f" Please wait a few seconds")
+        return selected_policy, message, True
+        # return message, True
+
+
+@app.callback(
+    [Output("energy-policy-display", "value"),
+     Output("energy-policy-selection", "value")],
+    [Input("interval-main", "n_intervals"),
+     Input("policy-store", "data")]
+)
+def sync_policy_display(n, store_data):
+    # print("finding energy policy")
+    return data_dict[-1]['running_policy'], data_dict[-1]['running_policy']
+
+
+@app.callback(
+    [Output("error-modal", "is_open"),
+     Output("error-modal-content", "children")],
+    [Input("interval-error-check", "n_intervals"),
+     Input("close-error-modal", "n_clicks")],
+    [State("error-modal", "is_open")]
+)
+def check_error(n_intervals, close_clicks, is_open):
+    global message_from_server
+    ctx = dash.callback_context
+    # Check if the Close button was clicked
+    if ctx.triggered and ctx.triggered[0]["prop_id"].split('.')[0] == "close-error-modal" and is_open:
+        return False, no_update
+    # If the error_message variable is set, open the modal
+    if message_from_server:
+        msg = message_from_server['status']+'! '+message_from_server['msg']+'.'
+        message_from_server = None  # Reset the error after showing it
+        return True, msg
+    # Otherwise, do not change the modal state
+    return is_open, no_update
+
+
 # Callback to update the content based on the dropdown selection
 @app.callback(
     Output("stack1-indicator-content", "children"),
@@ -197,14 +376,37 @@ def display_stack1_indicators(indicator_type):
     Input("interval-main", "n_intervals"),
 )
 def update_main_page(n):
-    if connection_state:
-        pass
-        # real_time_data_series = data_logger.get_realtime_data()
-        # real_time_data_point = real_time_data_series.tail(1)
-        # soc_unit1 = real_time_data_point['soc_percent'].values[-1]
-        # return soc_unit1
-    else:
-        return no_update
+    soc_unit1 = data_dict[-1]['soc_percent']
+    return soc_unit1
+
+
+# @app.callback(
+#     Output("status-output", "children"),
+#     Input("energy-policy", "value"),
+# )
+# def update_running_policy(selected_strategy):
+#     global running_policy
+#     if running_policy != selected_strategy:
+#         running_policy = selected_strategy
+#         # This print goes to your server's stdout (console/logs)
+#         print(f"User updated running_policy to: {running_policy}", flush=True)
+#         return f"Strategy {selected_strategy} selected and command sent."
+#     else:
+#         pass
+#
+# Callback that periodically checks the global variable and updates the RadioItems value
+# @app.callback(
+#     Output("energy-policy", "value"),
+#     Input("interval-main", "n_intervals"),
+#     State("energy-policy", "value")
+# )
+# def sync_running_policy(n_intervals, current_value):
+#     # If the global variable has changed (from another part of your backend),
+#     # update the RadioItems to reflect the current running_policy.
+#     if current_value != running_policy:
+#         print(f"Syncing UI to global running_policy: {running_policy}", flush=True)
+#         return running_policy
+#     return dash.no_update
 
 
 # Callback to update the real-time curves
@@ -239,8 +441,8 @@ def update_real_time_data(n):  # the data will update according to the updated_f
 
     last_update_time = datetime.fromisoformat(str(latest_data_point['timestamp']))
     time_bound = datetime.now() - timedelta(minutes=10)
-    print(last_update_time)
-    print(time_bound)
+    # print(last_update_time)
+    # print(time_bound)
     time_color = "red" if last_update_time < time_bound else "green"
 
     # Update the table data with new values
@@ -316,5 +518,8 @@ def update_real_time_data(n):  # the data will update according to the updated_f
 # Run the app
 if __name__ == "__main__":
     start_reading()
-    application.run(debug=True, port=5000)
+    ws_thread = threading.Thread(target=run_ws_client)
+    ws_thread.daemon = True  # ensure the thread exits when the main program does
+    ws_thread.start()
+    application.run(host="0.0.0.0", port=5000)
 
