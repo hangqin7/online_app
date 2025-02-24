@@ -51,7 +51,7 @@ def dash_layout():
                                            "fontSize": "15px", "fontWeight": "bold",
                                             "borderRadius": "5px", "border": "none",
                                            }),
-                        dcc.Location(id='url-redirect', refresh=False)
+                        dcc.Location(id='url-redirect', refresh=True)
                     ],
                 ),
 
