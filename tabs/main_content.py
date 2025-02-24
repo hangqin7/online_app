@@ -77,6 +77,8 @@ def dash_layout():
                         dcc.Tabs(
                             id="tabs",
                             value="main",
+                            persistence=True,
+                            persistence_type="session",  # or "local" if you prefer
                             children=[
                                 dcc.Tab(
                                     label="Main Page",
