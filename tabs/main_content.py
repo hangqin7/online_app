@@ -51,7 +51,7 @@ def dash_layout():
                                            "fontSize": "15px", "fontWeight": "bold",
                                             "borderRadius": "5px", "border": "none",
                                            }),
-                        dcc.Location(id='url-redirect', refresh=True)
+                        dcc.Location(id='url-redirect', refresh=False)
                     ],
                 ),
 
@@ -78,7 +78,7 @@ def dash_layout():
                             id="tabs",
                             value="main",
                             persistence=True,
-                            persistence_type="session",  # or "local" if you prefer
+                            persistence_type="local",  # or "local" if you prefer
                             children=[
                                 dcc.Tab(
                                     label="Main Page",
