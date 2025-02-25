@@ -199,7 +199,7 @@ def stack1_dynamics():
             # Connection Status
             html.Div(
                 [
-                    html.Span("Last update time: ", style={"fontWeight": "bold", "color": "#ffffff"}),
+                    html.Span("Last update time (GMT): ", style={"fontWeight": "bold", "color": "#ffffff"}),
                     html.Span(id="connection-status", style={"fontWeight": "bold", "color": "#1DB954"}),
                     # Placeholder
                 ],
