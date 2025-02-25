@@ -280,7 +280,7 @@ def control_ws(n_start, n_stop):
     # Determine which button was pressed
     ctx = dash.callback_context
     if not ctx.triggered:
-        return "Status: not started"
+        return "Status: Websocket started." if ws_running else "Status: Websocket not started."
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
     if button_id == "btn-start":

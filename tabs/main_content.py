@@ -62,12 +62,12 @@ def dash_layout():
                            "justifyContent": "center",
                            "marginBottom": "20px",},  # Space for the fixed header
                     children=[
-                        dcc.Store(id="tab-store", storage_type="session"),
+                        # dcc.Store(id="tab-store", storage_type="session"),
                         dcc.Tabs(
                             id="tabs",
                             value="main",
-                            # persistence=True,
-                            # persistence_type="session",  # or "local" if you prefer
+                            persistence=True,
+                            persistence_type="session",  # or "local" if you prefer
                             children=[
                                 dcc.Tab(
                                     label="Main Page",
@@ -318,7 +318,7 @@ def main_content():
                 dbc.Button("Stop Connection", id="btn-stop", n_clicks=0,
                            style={'backgroundColor': 'red', 'color': 'white', "border": "none",
                                   'marginRight': "8px"}),
-                html.Div(id="status-output", children="Status: not started", style={'marginTop': "8px"})
+                html.Div(id="status-output", style={'marginTop': "8px"})  # children="Status: not started",
             ]),
 
             html.Div(
