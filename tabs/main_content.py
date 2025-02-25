@@ -310,6 +310,16 @@ def main_content():
                 style={"position": "fixed", "top": "30%", "left": "40%", "fontSize":"18px",
                        "width": "350px", "zIndex": "10000", "backgroundColor": "black", "color": "green"},
             ),
+            html.Div([
+                # html.H1("WebSocket Control with Dash"),
+                dbc.Button("Start Connection to Local app", id="btn-start", n_clicks=0,
+                           style={'backgroundColor': 'green', 'color': 'white', "border": "none",
+                                  'marginRight': "8px"}),
+                dbc.Button("Stop Connection", id="btn-stop", n_clicks=0,
+                           style={'backgroundColor': 'red', 'color': 'white', "border": "none",
+                                  'marginRight': "8px"}),
+                html.Div(id="status-output", children="Status: not started", style={'marginTop': "8px"})
+            ]),
 
             html.Div(
                 [

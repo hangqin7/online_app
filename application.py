@@ -166,6 +166,8 @@ WS_ENDPOINT = "wss://s204arctwj.execute-api.eu-north-1.amazonaws.com/production/
 # Global variable to store the websocket connection
 ws_client = None
 message_from_server = None
+ws_thread = None
+ws_running = False
 
 def on_message(ws, message):
     global message_from_server
@@ -201,8 +203,8 @@ def run_ws_client():
     This function continuously tries to establish a WebSocket connection.
     If the connection is lost, it waits for 5 seconds before attempting to reconnect.
     """
-    global ws_client
-    while True:
+    global ws_client, ws_running
+    while ws_running:
         try:
             ws = websocket.WebSocketApp(
                 WS_ENDPOINT,
@@ -216,14 +218,16 @@ def run_ws_client():
         except Exception as e:
             print("[Online App] Exception in WebSocket thread:", e)
         # Wait a few seconds before attempting to reconnect
-        time.sleep(5)
+        if ws_running:
+            time.sleep(5)
+    print("[Online App] Exiting WebSocket thread.")
 
 def send_ws_command(command):
     """
     Sends a command (e.g. "lf") to the WebSocket.
     This function is safe to call from within a Dash callback.
     """
-    global ws_client
+    global ws_client, message_from_server
     if ws_client and ws_client.sock and ws_client.sock.connected:
         command_message = {
             "clientType": "online",
@@ -238,7 +242,55 @@ def send_ws_command(command):
             print("[Online App] Failed to send command:", e)
     else:
         print("[Online App] WebSocket not connected. Cannot send command.")
+        message_from_server = {'msg': "WebSocket not connected. Cannot send command", 'status': 'ERROR'}
 
+
+def start_ws():
+    global ws_thread, ws_running
+    if not ws_running:
+        ws_running = True
+        ws_thread = threading.Thread(target=run_ws_client, daemon=True)
+        ws_thread.start()
+        return "Websocket started."
+    else:
+        return "Websocket already running."
+
+def stop_ws():
+    global ws_thread, ws_running, ws_client
+    if ws_running:
+        ws_running = False  # Signal the thread to exit its loop
+        if ws_client and ws_client.sock and ws_client.sock.connected:
+            try:
+                ws_client.close()  # Close the connection to break out of run_forever
+            except Exception as e:
+                print("[Online App] Exception while closing WebSocket:", e)
+        if ws_thread is not None:
+            ws_thread.join(timeout=10)  # Wait (with timeout) for the thread to finish
+        ws_thread = None
+        return "Websocket stopped."
+    else:
+        return "Websocket is not running."
+
+@app.callback(
+    Output("status-output", "children"),
+    [Input("btn-start", "n_clicks"),
+     Input("btn-stop", "n_clicks")]
+)
+def control_ws(n_start, n_stop):
+    # Determine which button was pressed
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return "Status: not started"
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    if button_id == "btn-start":
+        message = start_ws()
+    elif button_id == "btn-stop":
+        message = stop_ws()
+    else:
+        message = "No action"
+
+    return f"Status: {message}"
 
 
 @app.callback(
@@ -488,18 +540,6 @@ def update_real_time_data(n):  # the data will update according to the updated_f
         {"color": time_color, "fontWeight": "bold"}
     )
 
-    # else:
-    #     return (
-    #         no_update,
-    #         no_update,
-    #         no_update,
-    #         no_update,
-    #         no_update,
-    #         no_update,
-    #         "No",
-    #         {"color": "red", "fontWeight": "bold"}
-    #     )
-
 
 
 # @app.callback(
@@ -541,8 +581,6 @@ def update_real_time_data(n):  # the data will update according to the updated_f
 # Run the app
 if __name__ == "__main__":
     start_reading()
-    ws_thread = threading.Thread(target=run_ws_client)
-    ws_thread.daemon = True  # ensure the thread exits when the main program does
-    ws_thread.start()
+    # start_ws()
     application.run(host="0.0.0.0", port=5000)
 
