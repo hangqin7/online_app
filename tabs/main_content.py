@@ -70,7 +70,7 @@ def dash_layout():
                             persistence_type="session",  # or "local" if you prefer
                             children=[
                                 dcc.Tab(
-                                    label="Main Page",
+                                    label="Main Controller",
                                     value="main",
                                     style={
                                         "backgroundColor": theme_bgcolor,
@@ -89,7 +89,7 @@ def dash_layout():
                                     },
                                 ),
                                 dcc.Tab(
-                                    label="Battery Unit 1",
+                                    label="Battery Monitor",
                                     value="stack1",
                                     style={
                                         "backgroundColor": theme_bgcolor,
@@ -107,25 +107,25 @@ def dash_layout():
                                         "padding": "10px",
                                     },
                                 ),
-                                dcc.Tab(
-                                    label="Battery Unit 2",
-                                    value="stack2",
-                                    style={
-                                        "backgroundColor": theme_bgcolor,
-                                        "color": "#e0e0e0",
-                                        "border": "1px solid #333333",
-                                        "borderRadius": "5px",
-                                        "padding": "10px",
-                                    },
-                                    selected_style={
-                                        "backgroundColor": "#1DB954",
-                                        "color": "#000",
-                                        "fontWeight": "bold",
-                                        "border": "1px solid #1DB954",
-                                        "borderRadius": "5px",
-                                        "padding": "10px",
-                                    },
-                                ),
+                                # dcc.Tab(
+                                #     label="Battery Unit 2",
+                                #     value="stack2",
+                                #     style={
+                                #         "backgroundColor": theme_bgcolor,
+                                #         "color": "#e0e0e0",
+                                #         "border": "1px solid #333333",
+                                #         "borderRadius": "5px",
+                                #         "padding": "10px",
+                                #     },
+                                #     selected_style={
+                                #         "backgroundColor": "#1DB954",
+                                #         "color": "#000",
+                                #         "fontWeight": "bold",
+                                #         "border": "1px solid #1DB954",
+                                #         "borderRadius": "5px",
+                                #         "padding": "10px",
+                                #     },
+                                # ),
                             ],
                             style={
                                 "marginBottom": "20px",
@@ -143,19 +143,6 @@ def dash_layout():
                                 "boxShadow": "0 4px 6px rgba(0, 0, 0, 0.5)",
                             },
                         ),
-                        # dcc.Loading(
-                        #     id="loading-content",
-                        #     type="circle",  # Choose "default", "circle", "cube", etc.
-                        #     children=html.Div(
-                        #         id="content",
-                        #         style={
-                        #             "backgroundColor": "#1c1c1c",
-                        #             "padding": "20px",
-                        #             "borderRadius": "10px",
-                        #             "boxShadow": "0 4px 6px rgba(0, 0, 0, 0.5)",
-                        #         },
-                        #     ),
-                        # ),
                     ],
                 ),
             ],
@@ -185,40 +172,6 @@ def main_content():
                 is_open=False,
                 centered=True,
             ),
-            # html.Div(
-            #     [
-            #         html.Label(
-            #             "Select Energy Policy:",
-            #             style={"color": "white", "fontSize": "20px", "fontWeight": "bold", "marginBottom": "20px"},
-            #         ),
-            #         dcc.RadioItems(
-            #             id="energy-policy",
-            #             options=[
-            #                 {"label": " Offline", "value": "offline"},
-            #                 {"label": " Manual", "value": "manual"},
-            #                 {"label": " Fast Frequency Response", "value": "ffr"},
-            #                 {"label": " Load Following", "value": "lf"},
-            #                 {"label": " Dispatch", "value": "dispatch"},
-            #                 {"label": " Dispatch Capacity", "value": "dc"},
-            #                 {"label": " Capacity", "value": "capacity"},
-            #                 {"label": " Test Pattern", "value": "tp"},
-            #                 {"label": " Combined Scheduled", "value": "cs"},
-            #                 {"label": " ERTZY Smart Policy", "value": "smart"},
-            #             ],
-            #             value='manual',
-            #             labelStyle={"display": "block", "margin": "10px 0", "fontSize": "18px", "color": "white"},
-            #             style={
-            #                 "marginTop": "20px",
-            #                 "padding": "10px",
-            #                 "backgroundColor": "#1e1e1e",
-            #                 "border": "1px solid #333",
-            #                 "borderRadius": "8px",
-            #             },
-            #         ),
-            #         html.Div(id="status-output", style={"display": "none"}),
-            #     ],
-            #     style={"margin": "20px 0"},
-            # ),
             html.Div(
                 [
                     html.Label(
@@ -326,12 +279,12 @@ def main_content():
                     html.Div(
                         [
                             html.Div(
-                                "Battery Unit 1: SOC",
+                                "Battery pack SOC",
                                 style={
                                     "textAlign": "center",
                                     "color": "white",
                                     "fontSize": "20px",  # Change font size here
-                                    "marginTop": "10px",
+                                    "marginTop": "5px",
                                 },
                             ),
                             daq.Gauge(
@@ -354,50 +307,89 @@ def main_content():
                             ),
                         ],
                         style={
-                            "width": "40%",
+                            "width": "25%",
                             "display": "inline-block",
-                            "margin": "0 2.5%",
-                            "padding": "0px",
+                            "margin": "0 2%",
+                            "paddingBottom": "0px",
                             "backgroundColor": "#1e1e1e",
                             "borderRadius": "15px",
                             "boxShadow": "0 0 20px 4px rgba(29,185,84,0.6)",  # Dazzling light effect
                         },
                     ),
-
                     html.Div(
                         [
                             html.Div(
-                                "Battery Unit 2: SOC",
+                                "Grid Load",
                                 style={
                                     "textAlign": "center",
                                     "color": "white",
                                     "fontSize": "20px",  # Change font size here
-                                    "marginTop": "10px",
+                                    "marginTop": "5px",
                                 },
                             ),
                             daq.Gauge(
-                                id="battery-level-2",
+                                id="grid-load",
                                 min=0,
                                 max=100,
                                 value=None,
                                 color={
                                     "gradient": True,
                                     "ranges": {
-                                        "#0d47a1": [0, 50],  # Blue gradient
-                                        "#1db954": [50, 100],  # Green gradient
+                                        "#dad000": [0, 50],  # Blue gradient
+                                        "#da1e00": [50, 100],  # Green gradient
                                     },
                                 },
                                 # label="Battery Unit 2",
                                 showCurrentValue=True,
-                                units="%",
+                                units="W",
                                 size=200,
                                 style={"color": "white", "padding": "0px"},
                             ),
                         ],
                         style={
-                            "width": "40%",
+                            "width": "25%",
                             "display": "inline-block",
-                            "margin": "0 2.5%",
+                            "margin": "0 2%",
+                            "padding": "0px",
+                            "backgroundColor": "#1e1e1e",
+                            "borderRadius": "15px",
+                            "boxShadow": "0 0 20px 4px rgba(29,185,84,0.6)",  # Dazzling light effect
+                        },
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                "Battery Pack Power",
+                                style={
+                                    "textAlign": "center",
+                                    "color": "white",
+                                    "fontSize": "20px",  # Change font size here
+                                    "marginTop": "5px",
+                                },
+                            ),
+                            daq.Gauge(
+                                id="pack-power",
+                                min=0,
+                                max=100,
+                                value=None,
+                                color={
+                                    "gradient": True,
+                                    "ranges": {
+                                        "#dad000": [0, 50],  # Blue gradient
+                                        "#da1e00": [50, 100],  # Green gradient
+                                    },
+                                },
+                                # label="Battery Unit 2",
+                                showCurrentValue=True,
+                                units="W",
+                                size=200,
+                                style={"color": "white", "padding": "0px"},
+                            ),
+                        ],
+                        style={
+                            "width": "25%",
+                            "display": "inline-block",
+                            "margin": "0 2%",
                             "padding": "0px",
                             "backgroundColor": "#1e1e1e",
                             "borderRadius": "15px",

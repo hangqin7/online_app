@@ -304,27 +304,6 @@ def logout(n_clicks):
     return dash.no_update
 
 # Update content based on selected tab: main, stack1, stack2
-
-# app.clientside_callback(
-#     """
-#     function(tab_value) {
-#         // Simply return the current value so that dcc.Store remains in sync.
-#         return tab_value;
-#     }
-#     """,
-#     Output("tab-store", "data"),
-#     Input("tabs", "value")
-# )
-#
-# @app.callback(
-#     Output("tabs", "value"),
-#     Input("tab-store", "data")
-# )
-# def sync_tabs(store_data):
-#     # Use the stored value if present, otherwise default to "main"
-#     return store_data or "main"
-
-
 @app.callback(
     Output("content", "children"),
     Input("tabs", "value"),
@@ -336,20 +315,8 @@ def render_content(tab):
     elif tab == "stack1":
         return stack1_content()
 
-    elif tab == "stack2":
-        return stack2_content()
-
-
-# Dash callback to trigger sending a command to the WebSocket
-# @app.callback(
-#     Output("status-output", "children"),
-#     [Input("energy-policy", "value")]
-# )
-# def update_policy(selected_policy):
-#     # When the radio button changes, send the command to the WebSocket
-#     send_ws_command(selected_policy)
-#     # Return a message (not displayed if the div is hidden)
-#     return f"Sent command: {selected_policy}"
+    # elif tab == "stack2":
+    #     return stack2_content()
 
 
 @app.callback(
@@ -455,35 +422,6 @@ def update_main_page(n_main):
     return float(soc_unit1)
 
 
-# @app.callback(
-#     Output("status-output", "children"),
-#     Input("energy-policy", "value"),
-# )
-# def update_running_policy(selected_strategy):
-#     global running_policy
-#     if running_policy != selected_strategy:
-#         running_policy = selected_strategy
-#         # This print goes to your server's stdout (console/logs)
-#         print(f"User updated running_policy to: {running_policy}", flush=True)
-#         return f"Strategy {selected_strategy} selected and command sent."
-#     else:
-#         pass
-#
-# Callback that periodically checks the global variable and updates the RadioItems value
-# @app.callback(
-#     Output("energy-policy", "value"),
-#     Input("interval-main", "n_intervals"),
-#     State("energy-policy", "value")
-# )
-# def sync_running_policy(n_intervals, current_value):
-#     # If the global variable has changed (from another part of your backend),
-#     # update the RadioItems to reflect the current running_policy.
-#     if current_value != running_policy:
-#         print(f"Syncing UI to global running_policy: {running_policy}", flush=True)
-#         return running_policy
-#     return dash.no_update
-
-
 # Callback to update the real-time curves
 @app.callback(
     [Output("voltage-curve", "figure"),
@@ -491,8 +429,11 @@ def update_main_page(n_main):
      Output("power-curve", "figure"),
      Output("soc-curve", "figure"),
      Output("temp-curve", "figure"),
+     Output("energy-curve", "figure"),
 
-     Output("dynamic-indicators-table", "data")],
+     Output("dynamic-indicators-table1", "data"),
+     Output("dynamic-indicators-table2", "data")],
+
      # Output("dynamic-indicators-table-body", "children")],
 
      Output("connection-status", "children"),
@@ -503,8 +444,6 @@ def update_main_page(n_main):
 def update_real_time_data(n):  # the data will update according to the updated_frequency set in the stack1.py
     # if connection_state:
     latest_data_point = data_dict[-1]
-    # voltage, current, power, soc = real_time_data_point['voltage'].values(), real_time_data_point['current'].values(), real_time_data_point['power'].values(), real_time_data_point['soc'].values()
-    # print(voltage, current, power, soc)
 
     # Create the data for the voltage curve
     voltage_trace = get_trace_obj('voltage_v', data_dict)
@@ -512,7 +451,7 @@ def update_real_time_data(n):  # the data will update according to the updated_f
     power_trace = get_trace_obj('pack_power_kw', data_dict)
     soc_trace = get_trace_obj('soc_percent', data_dict)
     temp_trace = get_trace_obj('stack_temp_max', data_dict)
-
+    available_energy_trace = get_trace_obj('available_energy_kwh', data_dict)
 
     last_update_time = datetime.fromisoformat(str(latest_data_point['timestamp']))
     time_bound = datetime.now() - timedelta(minutes=10)
@@ -521,25 +460,33 @@ def update_real_time_data(n):  # the data will update according to the updated_f
     time_color = "red" if last_update_time < time_bound else "green"
 
     # Update the table data with new values
-    table_data = [
-        {"indicator": "pack SOC", "value": f"{latest_data_point['soc_percent']}%"},
+    table_data1 = [
+        {"indicator": "pack SOC (%)", "value": f"{latest_data_point['soc_percent']}%"},
         {"indicator": "pack voltage (V)", "value": f"{latest_data_point['voltage_v']}"},
         {"indicator": "pack current (A)", "value": f"{latest_data_point['current_a']}"},
         {"indicator": "pack power (kw)", "value": f"{latest_data_point['pack_power_kw']}"},
         {"indicator": "max stack temperature (°C)", "value": f"{latest_data_point['stack_temp_max']}"},
-        {"indicator": "State of the Battery Bank", "value": "Healthy"},
+        {"indicator": "measured energy (kwh)", "value": f"{latest_data_point['measured_energy_kwh']}"},
+    ]
+    table_data2 = [
+        {"indicator": "AC power (kw)", "value": f"{latest_data_point['ac_power_kw']}"},
+        {"indicator": "DC power (kw)", "value": f"{latest_data_point['dc_power_kw']}"},
+        {"indicator": "storage power (kw)", "value": f"{latest_data_point['storage_power_kw']}"},
+        {"indicator": "pack SOH (%)", "value": f"{latest_data_point['soh_percent']}%"},
+        {"indicator": "available energy (kwh)", "value": f"{latest_data_point['available_energy_kwh']}"},
+        {"indicator": "available charge (Ah)", "value": f"{latest_data_point['available_charge_ah']}"},
     ]
     return (
-        {"data": [voltage_trace], "layout": get_figure_layout('pack voltage')},
-        {"data": [current_trace], "layout": get_figure_layout('pack current')},
-        {"data": [power_trace], "layout": get_figure_layout('pack power')},
-        {"data": [soc_trace], "layout": get_figure_layout('pack SOC')},
-        {"data": [temp_trace], "layout": get_figure_layout('Max stack temperature')},
-        table_data,
+        {"data": [voltage_trace], "layout": get_figure_layout('pack voltage (V)')},
+        {"data": [current_trace], "layout": get_figure_layout('pack current (A)')},
+        {"data": [power_trace], "layout": get_figure_layout('pack power (kW)')},
+        {"data": [soc_trace], "layout": get_figure_layout('pack SOC (%)')},
+        {"data": [temp_trace], "layout": get_figure_layout('max stack temperature (°C)')},
+        {"data": [available_energy_trace], "layout": get_figure_layout('available energy (kWh)')},
+        table_data1, table_data2,
         str(last_update_time).replace('T', '\t'),
         {"color": time_color, "fontWeight": "bold"}
     )
-
 
 
 # @app.callback(

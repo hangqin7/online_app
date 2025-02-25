@@ -210,63 +210,91 @@ def stack1_dynamics():
                 },
             ),
 
-            dash_table.DataTable(
-                id="dynamic-indicators-table",
-                columns=[
-                    {"name": "Indicator", "id": "indicator"},
-                    {"name": "Value", "id": "value"},
+            html.Div([
+                html.Div([
+                    dash_table.DataTable(
+                        id="dynamic-indicators-table1",
+                        columns=[
+                            {"name": "Indicator", "id": "indicator"},
+                            {"name": "Value", "id": "value"},
+                        ],
+                        style_table={"border": "none", "borderCollapse": "collapse"},
+                        style_header={
+                            "backgroundColor": plot_bg_color,
+                            "color": "white",
+                            "fontWeight": "bold",
+                            "fontSize": "20px",
+                        },
+                        style_cell={
+                            "textAlign": "center",
+                            "padding": "10px",
+                            "border": "none",
+                        },
+                        style_data={
+                            "backgroundColor": "#282828",
+                            "color": "white",
+                            "fontSize": "18px"
+                        },
+                        style_data_conditional=[
+                            {
+                                "if": {"row_index": "odd"},
+                                "backgroundColor": "#3b3b3b",
+                            },
+                            {
+                                "if": {"state": "selected"},
+                                "backgroundColor": "#7df783",
+                                "color": "black",  # Text color inside selected cell
+                            }
+                        ],
+                    ),
                 ],
-                # data=[
-                #     {"indicator": "State of Charge (SOC)", "value": f"{0:.2f}%"},
-                #     {"indicator": "DC Bus Voltage", "value": f"{0:.2f}V"},
-                #     {"indicator": "DC Current", "value": f"{0:.2f}A"},
-                #     {"indicator": "Total Power", "value": f"{0:.2f}W"},
-                #     {"indicator": "Temperature", "value": f"{0:.2f}W"},
-                #     {"indicator": "State of the Battery Bank", "value": "Healthy"},
-                # ],
-                style_table={"width": "90%", "margin": "0 auto","border": "none", "borderCollapse": "collapse"},
-                style_header={
-                    "backgroundColor": plot_bg_color,
-                    "color": "white",
-                    "fontWeight": "bold",
-                    "fontSize": "20px",
-                },
-                style_cell={
-                    "textAlign": "center",
-                    "padding": "10px",
-                    "border": "none",
-                    # "border": "1px solid #000000",
-                },
-                style_data={
-                    "backgroundColor": "#282828",
-                    "color": "white",
-                    "fontSize": "18px"
-                },
-                style_data_conditional=[
-                    {
-                        "if": {"row_index": "odd"},
-                        "backgroundColor": "#3b3b3b",
-                    },
-                    {
-                        "if": {"state": "selected"},
-                        "backgroundColor": "#7df783",
-                        "color": "black",  # Text color inside selected cell
-                    }
+                style={"width": "48%", "display": "inline-block", "marginTop": "2%"}),
+
+                html.Div([
+                    dash_table.DataTable(
+                        id="dynamic-indicators-table2",
+                        columns=[
+                            {"name": "Indicator", "id": "indicator"},
+                            {"name": "Value", "id": "value"},
+                        ],
+                        style_table={"border": "none", "borderCollapse": "collapse"},
+                        style_header={
+                            "backgroundColor": plot_bg_color,
+                            "color": "white",
+                            "fontWeight": "bold",
+                            "fontSize": "20px",
+                        },
+                        style_cell={
+                            "textAlign": "center",
+                            "padding": "10px",
+                            "border": "none",
+                        },
+                        style_data={
+                            "backgroundColor": "#282828",
+                            "color": "white",
+                            "fontSize": "18px"
+                        },
+                        style_data_conditional=[
+                            {
+                                "if": {"row_index": "odd"},
+                                "backgroundColor": "#3b3b3b",
+                            },
+                            {
+                                "if": {"state": "selected"},
+                                "backgroundColor": "#7df783",
+                                "color": "black",  # Text color inside selected cell
+                            }
+                        ],
+                    ),
                 ],
+                style={"width": "48%", "display": "inline-block", "marginTop": "2%"}),
+            ],
+                style={
+                    "display": "flex", "flexWrap": "wrap", "justifyContent": "space-between",
+                    "alignItems": "center",
+                    "width": "90%", "margin": "0 auto"
+                }
             ),
-            # dbc.Table(
-            #     # Add header with placeholders for the body
-            #     children=[
-            #         html.Thead(
-            #             html.Tr([html.Th("Indicator"), html.Th("Value")])
-            #         ),
-            #         html.Tbody(id="dynamic-indicators-table-body"),  # Table body with an id
-            #     ],
-            #     className="table table-dark table-sm table-hover",
-            #     style={"width": "90%", "margin": "0 auto"},
-            # ),
-
-
             # Real-time Voltage, Current, Power, SOC Curves (2x2 grid)
             html.Div(
                 [
@@ -288,14 +316,17 @@ def stack1_dynamics():
 
             html.Div(
                 [
-
                     html.Div(
                         dcc.Graph(id="soc-curve", figure={'layout': get_figure_layout("soc")}),
-                        style={"width": "48%", "display": "inline-block", "marginTop": "2%"},
+                        style={"width": "32%", "display": "inline-block", "marginTop": "2%"},
                     ),
                     html.Div(
                         dcc.Graph(id="temp-curve", figure={'layout': get_figure_layout("temperature")}),
-                        style={"width": "48%", "display": "inline-block", "marginTop": "2%"},
+                        style={"width": "32%", "display": "inline-block", "marginTop": "2%"},
+                    ),
+                    html.Div(
+                        dcc.Graph(id="energy-curve", figure={'layout': get_figure_layout("available energy")}),
+                        style={"width": "32%", "display": "inline-block", "marginTop": "2%"},
                     ),
                 ],
                 style={"display": "flex", "flexWrap": "wrap", "justifyContent": "space-between", "width": "90%", "margin": "0 auto"},
