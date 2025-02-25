@@ -452,7 +452,7 @@ def display_stack1_indicators(indicator_type):
 )
 def update_main_page(n_main):
     soc_unit1 = data_dict[-1]['soc_percent']
-    return soc_unit1
+    return float(soc_unit1)
 
 
 # @app.callback(
